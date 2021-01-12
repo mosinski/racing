@@ -14,7 +14,6 @@ roadW = 2000;
 segL = 200;
 camD = 0.84;
 
-
 def drawQuad(color, x1, y1, w1, x2, y2, w2)
   Quad.new(
     x1: x1-w1, y1: y1,
@@ -68,7 +67,7 @@ for i in 0..1600
     line.y = Math.sin(i/30.0) * 1500
   end
 
-  lines << line;
+  lines << line
 end
 
 H = 1500
@@ -89,9 +88,9 @@ on :key_held do |event|
   when :right
     playerX += 0.1
   when :up
-    speed = 200
+    speed += 200 if speed < 1000
   when :down
-    speed = -200
+    speed -= 200 if speed > -400
   when :tab
     #speed *= 3
   end
@@ -118,12 +117,12 @@ update do
   for i in startPos..startPos + 300
     l = lines[i % N];
     l.project(playerX * roadW - x, camH, startPos * segL - (i >= N ? N * segL : 0), camD)
-    x += dx;
-    dx += l.curve;
+    #x += dx;
+    #dx += l.curve;
 
-    l.clip = maxy
+    #l.clip = maxy
 
-    puts l.Y
+    #puts l.Y
 
     if (l.Y >= maxy)
       next
