@@ -35,13 +35,20 @@ on :key_held do |event|
   case event.key.to_sym
   when :left
     playerX -= 0.1
+    player.play animation: :left, loop: true
   when :right
     playerX += 0.1
+    player.play animation: :right, loop: true
   when :up
     speed += 50 if speed < 400
     player.play animation: :straight, loop: true
   when :down
     speed -= 3 if speed > -50
+    if speed > 0
+      player.play animation: :straight_stop, loop: true
+    else
+      player.play animation: :straight, loop: speed < 0
+    end
   when :tab
     #speed *= 3 if speed < 200
   end
