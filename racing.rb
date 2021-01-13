@@ -39,6 +39,7 @@ on :key_held do |event|
     playerX += 0.1
   when :up
     speed += 50 if speed < 400
+    player.play animation: :straight, loop: true
   when :down
     speed -= 3 if speed > -50
   when :tab
