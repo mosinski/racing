@@ -35,10 +35,10 @@ on :key_held do |event|
   case event.key.to_sym
   when :left
     playerX -= 0.1
-    player.play animation: :left, loop: true
+    player.move(h: :left)
   when :right
     playerX += 0.1
-    player.play animation: :right, loop: true
+    player.move(h: :right)
   when :up
     speed += 50 if speed < 400
     player.play animation: :straight, loop: true
@@ -69,6 +69,14 @@ update do
   camH = 1500 + t.lines[startPos].y
   x = 0
   dx = 0
+
+  if camH > 1500
+    player.move(v: :up)
+  elsif camH < 1500
+    player.move(v: :down)
+  else
+    player.move(v: :straight)
+  end
 
   background.move(-t.lines[startPos].curve*2) if (speed > 0)
   background.move(t.lines[startPos].curve*2) if (speed < 0)
