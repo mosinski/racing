@@ -21,6 +21,7 @@ N = 1600
 
 background = Background.new
 t = Track.new
+debug = Text.new('', x: 10, y: 10, color: 'red')
 x = 0
 dx = 0
 pos = 0
@@ -69,6 +70,7 @@ update do
   camH = 1500 + t.lines[startPos].y
   x = 0
   dx = 0
+  gForce = 0
 
   if camH > 1500
     player.move(v: :up)
@@ -76,6 +78,10 @@ update do
     player.move(v: :down)
   else
     player.move(v: :straight)
+  end
+
+  if playerX > 1 || playerX < -1
+    speed -= 4 if speed > 0
   end
 
   background.move(-t.lines[startPos].curve*2) if (speed > 0)
@@ -105,6 +111,13 @@ update do
     t.drawQuad(i % N, 1, rumble, p.X, p.Y, p.W*1.2, l.X, l.Y, l.W * 1.2)
     t.drawQuad(i % N, 2, road, p.X, p.Y, p.W, l.X, l.Y, l.W)
   end
+
+  #gForce = dx * 0.0001 if dx.abs > 120 && speed > 100
+  #debug.text = "Player X: #{playerX} G: #{gForce} DX: #{dx} Speed: #{speed} Pos: #{pos} Start Pos: #{startPos} Cam H: #{camH}"
+  gForce = -t.lines[startPos].curve * 0.00015 * speed if (speed > 0)
+  gForce = t.lines[startPos].curve * 0.00015 * speed if (speed < 0)
+  playerX += gForce
+  debug.text = "Speed: #{speed} GForce: #{gForce}"
 end
 
 show

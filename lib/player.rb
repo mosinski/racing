@@ -127,7 +127,18 @@ class Player < Sprite
       up_left_stop: [],
       up_right: [],
       up_right_stop: [],
-      down_straight: [],
+      down_straight: [
+        {
+          x: 2, y: 180,
+          width: 123, height: 60,
+          time: 200
+        },
+        {
+          x: 135, y: 180,
+          width: 123, height: 60,
+          time: 200
+        }
+      ],
       down_straight_stop: [],
       down_left: [],
       down_left_stop: [],
