@@ -2,6 +2,7 @@ require 'ruby2d'
 require './lib/background'
 require './lib/player'
 require './lib/track'
+require './lib/car'
 
 ##
 # Window
@@ -21,34 +22,56 @@ N = 1600
 
 background = Background.new
 t = Track.new
+car = Car.new
 debug = Text.new('', x: 10, y: 10, color: 'red')
+gearText = Text.new('N', x: 870, y: 720, size: 30, font: 'fonts/LCD-Bold/LCDWinTT/LCD2U___.TTF', color: 'red')
+speedText = Text.new('0', x: 900, y: 700, size: 55, font: 'fonts/LCD-Bold/LCDWinTT/LCD2U___.TTF', color: 'black')
 x = 0
 dx = 0
 pos = 0
 speed = 0
 playerX = 0
+bestTime = 0
+currentTime = 0
+lapTimes = Array.new(5, 0)
 startPos = pos / segL
 camH = t.lines[startPos].y + H
 maxy = 768 #get(:height)
 player = Player.new
+start = false
+
+on :key do |event|
+  start = true
+end
 
 on :key_held do |event|
   case event.key.to_sym
   when :left
-    playerX -= 0.1
+    playerX -= (car.speed * 0.0002)
     player.move(h: :left)
   when :right
-    playerX += 0.1
+    playerX += (car.speed * 0.0002)
     player.move(h: :right)
   when :up
-    speed += 50 if speed < 400
+    puts "Gear max speed: #{car.model.current_gear[:speed]}, Current Speed: #{car.speed}"
+    if car.speed < car.model.current_gear[:speed]
+      puts "Inscreasing speed"
+      car.speed += car.model.current_gear[:acceleration]
+    else
+      puts "Switch gear"
+      car.model.gear_up
+    end
     player.play animation: :straight, loop: true
   when :down
-    speed -= 3 if speed > -50
-    if speed > 0
+    if car.speed > car.model.prev_gear[:speed]
+      car.speed -= car.model.breaks if car.speed > -50
+    else
+      car.model.gear_down
+    end
+    if car.speed > 0
       player.play animation: :straight_stop, loop: true
     else
-      player.play animation: :straight, loop: speed < 0
+      player.play animation: :straight, loop: car.speed < 0
     end
   when :tab
     #speed *= 3 if speed < 200
@@ -56,7 +79,8 @@ on :key_held do |event|
 end
 
 update do
-  pos += speed
+  currentTime += 1 if start
+  pos += car.speed
 
   while (pos >= N * segL) do
     pos -= N * segL
@@ -81,11 +105,11 @@ update do
   end
 
   if playerX > 1 || playerX < -1
-    speed -= 4 if speed > 0
+    car.speed -= 4 if car.speed > 0
   end
 
-  background.move(-t.lines[startPos].curve*2) if (speed > 0)
-  background.move(t.lines[startPos].curve*2) if (speed < 0)
+  background.move(-t.lines[startPos].curve * (car.speed / 200.0)) if (car.speed > 0)
+  background.move(t.lines[startPos].curve * (car.speed / 200.0)) if (car.speed < 0)
 
   for i in startPos..startPos + 300
     l = t.lines[i % N];
@@ -112,12 +136,18 @@ update do
     t.drawQuad(i % N, 2, road, p.X, p.Y, p.W, l.X, l.Y, l.W)
   end
 
-  #gForce = dx * 0.0001 if dx.abs > 120 && speed > 100
-  #debug.text = "Player X: #{playerX} G: #{gForce} DX: #{dx} Speed: #{speed} Pos: #{pos} Start Pos: #{startPos} Cam H: #{camH}"
-  gForce = -t.lines[startPos].curve * 0.00015 * speed if (speed > 0)
-  gForce = t.lines[startPos].curve * 0.00015 * speed if (speed < 0)
+  gForce = -t.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
+  gForce = t.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
   playerX += gForce
-  debug.text = "Speed: #{speed} GForce: #{gForce}"
+  debug.text = "Speed: #{car.speed} Gear: #{car.model.gear} GForce: #{gForce} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
+  speedText.text = car.speed.abs / 2
+  gearText.text = car.model.gear
+  #debug.text = "DX: #{dx} Pos: #{pos} Start Pos: #{startPos}"
+
+  if start && startPos == 0 && car.speed > 0 && currentTime > 60
+    bestTime = currentTime if bestTime == 0 || bestTime > currentTime
+    currentTime = 0
+  end
 end
 
 show

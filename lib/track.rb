@@ -1,4 +1,3 @@
-#require './line2'
 require './lib/line2'
 
 class Track
