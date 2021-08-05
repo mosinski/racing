@@ -1,11 +1,12 @@
 require './lib/line2'
 
 class Track
-  attr_accessor :lines, :quads
+  attr_accessor :lines, :quads, :background
 
   def initialize
     @lines = []
     @quads = []
+    @background = Background.new
 
     drawLines
     drawQuads
@@ -81,5 +82,13 @@ class Track
     quad.x4 = x1+w1
     quad.y4 = y1
     quad.color = color
+  end
+
+  def drawBackground(pos, speed)
+    if speed > 0
+      background.move(-self.lines[pos].curve * (speed / 200.0))
+    elsif speed < 0
+      background.move(self.lines[pos].curve * (speed / 200.0))
+    end
   end
 end

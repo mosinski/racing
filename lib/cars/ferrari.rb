@@ -17,8 +17,6 @@ class Ferrari
   end
 
   def gear_up
-    puts "In gear up"
-    puts "UP: #{gears.keys[gear_index + 1]}"
     if up = gears.keys[gear_index + 1]
       self.gear = up
     end

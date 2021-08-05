@@ -20,12 +20,12 @@ camD = 0.84;
 H = 1500
 N = 1600
 
-background = Background.new
-t = Track.new
+track = Track.new
 car = Car.new
+player = Player.new
 debug = Text.new('', x: 10, y: 10, color: 'red')
-gearText = Text.new('N', x: 870, y: 720, size: 30, font: 'fonts/LCD-Bold/LCDWinTT/LCD2U___.TTF', color: 'red')
-speedText = Text.new('0', x: 900, y: 700, size: 55, font: 'fonts/LCD-Bold/LCDWinTT/LCD2U___.TTF', color: 'black')
+gearText = Text.new('N', x: 870, y: 720, size: 30, font: 'assets/fonts/LCD.TTF', color: 'red')
+speedText = Text.new('0', x: 900, y: 700, size: 55, font: 'assets/fonts/LCD.TTF', color: 'black')
 x = 0
 dx = 0
 pos = 0
@@ -35,9 +35,8 @@ bestTime = 0
 currentTime = 0
 lapTimes = Array.new(5, 0)
 startPos = pos / segL
-camH = t.lines[startPos].y + H
-maxy = 768 #get(:height)
-player = Player.new
+camH = track.lines[startPos].y + H
+maxy = get(:height)
 start = false
 
 on :key do |event|
@@ -53,21 +52,14 @@ on :key_held do |event|
     playerX += (car.speed * 0.0002)
     player.move(h: :right)
   when :up
-    puts "Gear max speed: #{car.model.current_gear[:speed]}, Current Speed: #{car.speed}"
-    if car.speed < car.model.current_gear[:speed]
-      puts "Inscreasing speed"
+    if car.speed <= car.model.current_gear[:speed]
       car.speed += car.model.current_gear[:acceleration]
-    else
-      puts "Switch gear"
-      car.model.gear_up
     end
+
     player.play animation: :straight, loop: true
   when :down
-    if car.speed > car.model.prev_gear[:speed]
-      car.speed -= car.model.breaks if car.speed > -50
-    else
-      car.model.gear_down
-    end
+    car.speed -= car.model.breaks if car.speed > -50
+
     if car.speed > 0
       player.play animation: :straight_stop, loop: true
     else
@@ -78,8 +70,12 @@ on :key_held do |event|
   end
 end
 
+cheated = false
+
 update do
   currentTime += 1 if start
+  prevPos = pos.dup
+
   pos += car.speed
 
   while (pos >= N * segL) do
@@ -90,8 +86,21 @@ update do
     pos += N * segL
   end
 
+  if car.speed > 0 && prevPos > pos
+    if cheated
+      cheated = false
+    else
+      bestTime = currentTime if bestTime == 0 || bestTime > currentTime
+      currentTime = 0
+    end
+  end
+
+  if car.speed < 0 && prevPos < pos
+    cheated = true
+  end
+
   startPos = pos / segL
-  camH = 1500 + t.lines[startPos].y
+  camH = 1500 + track.lines[startPos].y
   x = 0
   dx = 0
   gForce = 0
@@ -106,13 +115,15 @@ update do
 
   if playerX > 1 || playerX < -1
     car.speed -= 4 if car.speed > 0
+  elsif currentTime.even?
+    car.speed -= 1 if car.speed > 0
   end
 
-  background.move(-t.lines[startPos].curve * (car.speed / 200.0)) if (car.speed > 0)
-  background.move(t.lines[startPos].curve * (car.speed / 200.0)) if (car.speed < 0)
+  car.automatic_transmission
+  track.drawBackground(startPos, car.speed)
 
   for i in startPos..startPos + 300
-    l = t.lines[i % N];
+    l = track.lines[i % N];
     l.project(playerX * roadW - x, camH, startPos * segL - (i >= N ? N * segL : 0), camD)
     x += dx;
     dx += l.curve;
@@ -129,25 +140,20 @@ update do
     rumble = ((i/3) % 2) > 0 ? '#ffffff' : '#000000'
     road   = ((i/3) % 2) > 0 ? '#6b6b6b' : '#696969'
 
-    p = t.lines[(i-1) % N]
+    p = track.lines[(i-1) % N]
 
-    t.drawQuad(i % N, 0, grass, 0, p.Y, get(:width), 0, l.Y, get(:width))
-    t.drawQuad(i % N, 1, rumble, p.X, p.Y, p.W*1.2, l.X, l.Y, l.W * 1.2)
-    t.drawQuad(i % N, 2, road, p.X, p.Y, p.W, l.X, l.Y, l.W)
+    track.drawQuad(i % N, 0, grass, 0, p.Y, get(:width), 0, l.Y, get(:width))
+    track.drawQuad(i % N, 1, rumble, p.X, p.Y, p.W*1.2, l.X, l.Y, l.W * 1.2)
+    track.drawQuad(i % N, 2, road, p.X, p.Y, p.W, l.X, l.Y, l.W)
   end
 
-  gForce = -t.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
-  gForce = t.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
+  gForce = -track.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
+  gForce = track.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
   playerX += gForce
-  debug.text = "Speed: #{car.speed} Gear: #{car.model.gear} GForce: #{gForce} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
+  debug.text = "Speed: #{car.speed} Gear: #{car.model.gear} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
   speedText.text = car.speed.abs / 2
   gearText.text = car.model.gear
   #debug.text = "DX: #{dx} Pos: #{pos} Start Pos: #{startPos}"
-
-  if start && startPos == 0 && car.speed > 0 && currentTime > 60
-    bestTime = currentTime if bestTime == 0 || bestTime > currentTime
-    currentTime = 0
-  end
 end
 
 show
