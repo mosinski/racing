@@ -1,8 +1,8 @@
 require 'ruby2d'
 require './lib/background'
 require './lib/player'
-require './lib/track'
 require './lib/car'
+require './lib/track'
 
 ##
 # Window
@@ -15,13 +15,12 @@ set title: 'Racing',
 
 roadW = 2000;
 segL = 200;
-camD = 0.84;
 
 H = 1500
 N = 1600
 
-track = Track.new
 car = Car.new
+track = Track.new
 player = Player.new
 debug = Text.new('', x: 10, y: 10, color: 'red')
 gearText = Text.new('N', x: 870, y: 720, size: 30, font: 'assets/fonts/LCD.TTF', color: 'red')
@@ -29,53 +28,50 @@ speedText = Text.new('0', x: 900, y: 700, size: 55, font: 'assets/fonts/LCD.TTF'
 x = 0
 dx = 0
 pos = 0
-speed = 0
-playerX = 0
 bestTime = 0
 currentTime = 0
 lapTimes = Array.new(5, 0)
 startPos = pos / segL
-camH = track.lines[startPos].y + H
+car.y = track.lines[startPos].y + H
 maxy = get(:height)
-start = false
-
-on :key do |event|
-  start = true
-end
 
 on :key_held do |event|
   case event.key.to_sym
   when :left
-    playerX -= (car.speed * 0.0002)
-    player.move(h: :left)
+    car.turn_left
+    #player.move(h: :left)
   when :right
-    playerX += (car.speed * 0.0002)
-    player.move(h: :right)
+    car.turn_right
+    #player.move(h: :right)
   when :up
-    if car.speed <= car.model.current_gear[:speed]
-      car.speed += car.model.current_gear[:acceleration]
-    end
-
-    player.play animation: :straight, loop: true
+    car.accelerate
+    #car.model.play animation: "23".to_sym, loop: true
+    #player.play animation: :straight, loop: true
   when :down
-    car.speed -= car.model.breaks if car.speed > -50
+    car.brake
 
-    if car.speed > 0
-      player.play animation: :straight_stop, loop: true
-    else
-      player.play animation: :straight, loop: car.speed < 0
-    end
+    #if car.speed > 0
+    #  player.play animation: :straight_stop, loop: true
+    #else
+    #  player.play animation: :straight, loop: car.speed < 0
+    #end
   when :tab
     #speed *= 3 if speed < 200
+  end
+end
+
+on :key_up do |event|
+  case event.key.to_sym
+  when :down
+    car.braking = false
   end
 end
 
 cheated = false
 
 update do
-  currentTime += 1 if start
+  currentTime += 1
   prevPos = pos.dup
-
   pos += car.speed
 
   while (pos >= N * segL) do
@@ -100,31 +96,36 @@ update do
   end
 
   startPos = pos / segL
-  camH = 1500 + track.lines[startPos].y
+  car.y = H + track.lines[startPos].y
   x = 0
   dx = 0
   gForce = 0
 
-  if camH > 1500
-    player.move(v: :up)
-  elsif camH < 1500
-    player.move(v: :down)
-  else
-    player.move(v: :straight)
-  end
+  #if camH > 1500
+  #  player.move(v: :up)
+  #elsif camH < 1500
+  #  player.move(v: :down)
+  #else
+  #  player.move(v: :straight)
+  #end
 
-  if playerX > 1 || playerX < -1
+  if car.off_road?
     car.speed -= 4 if car.speed > 0
   elsif currentTime.even?
     car.speed -= 1 if car.speed > 0
   end
 
+
+  #car.position(car.y)
+  #car.animation
+  player.move(braks: car.braking, angle: car.a)
+  car.steering_wheel
   car.automatic_transmission
   track.drawBackground(startPos, car.speed)
 
   for i in startPos..startPos + 300
     l = track.lines[i % N];
-    l.project(playerX * roadW - x, camH, startPos * segL - (i >= N ? N * segL : 0), camD)
+    l.project(car.x * roadW - x, car.y, startPos * segL - (i >= N ? N * segL : 0), car.d)
     x += dx;
     dx += l.curve;
 
@@ -149,8 +150,8 @@ update do
 
   gForce = -track.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
   gForce = track.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
-  playerX += gForce
-  debug.text = "Speed: #{car.speed} Gear: #{car.model.gear} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
+  car.x += gForce
+  debug.text = "Speed: #{car.speed} Angle: #{car.a} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
   speedText.text = car.speed.abs / 2
   gearText.text = car.model.gear
   #debug.text = "DX: #{dx} Pos: #{pos} Start Pos: #{startPos}"
