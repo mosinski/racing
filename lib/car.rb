@@ -6,10 +6,10 @@ class Car
   def initialize
     @model = Ferrari.new
     @speed = 0
+    @a = 0
     @x = 0
     @y = 0
     @d = 0.84
-    @a = 0.0
     @braking = false
   end
 
@@ -23,12 +23,12 @@ class Car
 
   def turn_left
     self.x -= self.speed * 0.0002
-    self.a -= self.speed * 0.0006 if self.a > -2
+    self.a -= (self.speed * 0.0008).round(1) if self.a > -2
   end
 
   def turn_right
     self.x += self.speed * 0.0002
-    self.a += self.speed * 0.0006 if self.a < 2
+    self.a += (self.speed * 0.0008).round(1) if self.a < 2
   end
 
   def accelerate

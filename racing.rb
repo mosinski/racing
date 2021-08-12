@@ -39,22 +39,12 @@ on :key_held do |event|
   case event.key.to_sym
   when :left
     car.turn_left
-    #player.move(h: :left)
   when :right
     car.turn_right
-    #player.move(h: :right)
   when :up
     car.accelerate
-    #car.model.play animation: "23".to_sym, loop: true
-    #player.play animation: :straight, loop: true
   when :down
     car.brake
-
-    #if car.speed > 0
-    #  player.play animation: :straight_stop, loop: true
-    #else
-    #  player.play animation: :straight, loop: car.speed < 0
-    #end
   when :tab
     #speed *= 3 if speed < 200
   end
@@ -115,9 +105,6 @@ update do
     car.speed -= 1 if car.speed > 0
   end
 
-
-  #car.position(car.y)
-  #car.animation
   player.move(braks: car.braking, angle: car.a)
   car.steering_wheel
   car.automatic_transmission
@@ -151,10 +138,9 @@ update do
   gForce = -track.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
   gForce = track.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
   car.x += gForce
-  debug.text = "Speed: #{car.speed} Angle: #{car.a} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")} | #{bestTime}"
+  debug.text = "Speed: #{car.speed} Angle: #{car.a} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")}"
   speedText.text = car.speed.abs / 2
   gearText.text = car.model.gear
-  #debug.text = "DX: #{dx} Pos: #{pos} Start Pos: #{startPos}"
 end
 
 show
