@@ -105,7 +105,7 @@ update do
     car.speed -= 1 if car.speed > 0
   end
 
-  player.move(braks: car.braking, angle: car.a)
+  player.move(braks: car.braking, v: car.a, h: car.y, speed: car.speed, time: currentTime)
   car.steering_wheel
   car.automatic_transmission
   track.drawBackground(startPos, car.speed)
@@ -138,7 +138,7 @@ update do
   gForce = -track.lines[startPos].curve * 0.00015 * car.speed if (car.speed > 0)
   gForce = track.lines[startPos].curve * 0.00015 * car.speed if (car.speed < 0)
   car.x += gForce
-  debug.text = "Speed: #{car.speed} Angle: #{car.a} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")}"
+  debug.text = "Speed: #{car.speed} Angle: #{car.a} Height: #{car.y} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")}"
   speedText.text = car.speed.abs / 2
   gearText.text = car.model.gear
 end

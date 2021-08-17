@@ -1,12 +1,9 @@
 class Player < Sprite
-  attr_accessor :h, :v, :s, :i, :j
+  attr_accessor :h, :v, :s
 
   def initialize
-    @h = :straight
-    @v = :straight
-    @s = nil
-    @i = 2
-    @j = 3
+    @h = 1500
+    @v = 3
 
     super(
       'images/ferrari.png',
@@ -14,18 +11,16 @@ class Player < Sprite
       x: 432,
       animations: animations
     )
-
-    #move
   end
 
-  def move(h: self.h, v: self.h, s: self.s, braks: false, angle: 0)
+  def move(h: self.h, v: self.h, s: self.s, braks: false, time: 0, speed: 0)
+    return unless skip?(speed, time)
+    row = calculate_h(h)
+    self.v = (v + 3).floor
     self.h = h
-    self.v = v
-    self.s = s
-    self.j = (angle + 3).floor
 
-    animation = "#{self.i}#{self.j}"
-    #animation = "25"
+    animation = "#{row}#{self.v}"
+    #animation = "21"
     animation += "_brake" if braks
     puts animation.to_sym.inspect
     puts animations[animation.to_sym].inspect
@@ -83,8 +78,30 @@ class Player < Sprite
           time: 200
         }
       ],
-      :"13" => [],
-      :"13_brake" => [],
+      :"13" => [
+        {
+          x: 2, y: 2,
+          width: 120, height: 65,
+          time: 200
+        },
+        {
+          x: 136, y: 2,
+          width: 120, height: 65,
+          time: 200
+        }
+      ],
+      :"13_brake" => [
+        {
+          x: 273, y: 2,
+          width: 120, height: 65,
+          time: 200
+        },
+        {
+          x: 413, y: 2,
+          width: 120, height: 65,
+          time: 200
+        }
+      ],
       :"14" => [
         {
           x: 2, y: 177,
@@ -160,120 +177,243 @@ class Player < Sprite
       :"22" => [
         {
           x: 830, y: 242,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         },
         {
           x: 964, y: 242,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         }
       ],
       :"22_brake" => [
         {
           x: 554, y: 242,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         },
         {
           x: 692, y: 242,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         }
       ],
       :"23" => [
         {
           x: 2, y: 65,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         },
         {
           x: 135, y: 65,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         }
       ],
       :"23_brake" => [
         {
           x: 272, y: 65,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         },
         {
           x: 414, y: 65,
-          width: 120, height: 60,
+          width: 120, height: 59,
           time: 200
         }
       ],
       :"24" => [
         {
           x: 2, y: 242,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         },
         {
           x: 136, y: 242,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         }
       ],
       :"24_brake" => [
         {
           x: 273, y: 242,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         },
         {
           x: 412, y: 242,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         }
       ],
       :"25" => [
         {
           x: 2, y: 419,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         },
         {
           x: 135, y: 419,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         }
       ],
       :"25_brake" => [
         {
           x: 273, y: 419,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         },
         {
           x: 413, y: 419,
-          width: 123, height: 60,
+          width: 123, height: 59,
           time: 200
         }
       ],
-      :"31" => [],
-      :"31_brake" => [],
-      :"32" => [],
-      :"32_brake" => [],
-      :"33" => [
+      :"31" => [
         {
-          x: 2, y: 180,
-          width: 123, height: 60,
+          x: 830, y: 479,
+          width: 123, height: 50,
+          time: 300
+        },
+        {
+          x: 964, y: 479,
+          width: 123, height: 50,
+          time: 300
+        }
+      ],
+      :"31_brake" => [
+        {
+          x: 553, y: 479,
+          width: 123, height: 50,
+          time: 300
+        },
+        {
+          x: 692, y: 479,
+          width: 123, height: 50,
+          time: 300
+        }
+      ],
+      :"32" => [
+        {
+          x: 830, y: 302,
+          width: 120, height: 50,
           time: 200
         },
         {
-          x: 135, y: 180,
-          width: 123, height: 60,
+          x: 964, y: 302,
+          width: 120, height: 50,
           time: 200
         }
       ],
-      :"33_brake" => [],
-      :"34" => [],
-      :"34_brake" => [],
-      :"35" => [],
-      :"35_brake" => []
+      :"32_brake" => [
+        {
+          x: 553, y: 302,
+          width: 120, height: 50,
+          time: 200
+        },
+        {
+          x: 692, y: 302,
+          width: 120, height: 50,
+          time: 200
+        }
+      ],
+      :"33" => [
+        {
+          x: 1, y: 125,
+          width: 123, height: 50,
+          time: 200
+        },
+        {
+          x: 135, y: 125,
+          width: 123, height: 50,
+          time: 200
+        }
+      ],
+      :"33_brake" => [
+        {
+          x: 273, y: 125,
+          width: 120, height: 50,
+          time: 200
+        },
+        {
+          x: 412, y: 125,
+          width: 120, height: 50,
+          time: 200
+        }
+      ],
+      :"34" => [
+        {
+          x: 2, y: 302,
+          width: 123, height: 50,
+          time: 200
+        },
+        {
+          x: 136, y: 302,
+          width: 123, height: 50,
+          time: 200
+        }
+      ],
+      :"34_brake" => [
+        {
+          x: 273, y: 302,
+          width: 123, height: 50,
+          time: 200
+        },
+        {
+          x: 412, y: 302,
+          width: 123, height: 50,
+          time: 200
+        }
+      ],
+      :"35" => [
+        {
+          x: 2, y: 479,
+          width: 123, height: 51,
+          time: 200
+        },
+        {
+          x: 136, y: 479,
+          width: 123, height: 51,
+          time: 200
+        }
+      ],
+      :"35_brake" => [
+        {
+          x: 273, y: 479,
+          width: 123, height: 51,
+          time: 200
+        },
+        {
+          x: 412, y: 479,
+          width: 123, height: 51,
+          time: 200
+        }
+      ]
     }
+  end
+
+  def calculate_h(h)
+    if h > self.h
+      1
+    elsif h < self.h
+     3
+    else
+     2
+    end
+  end
+
+  def skip?(speed, time)
+    if speed == 0
+      true
+    elsif speed < 60
+      time % 30 == 0
+    elsif speed < 120
+      time % 4 == 0
+    elsif speed < 200
+      time % 2 == 0
+    else
+      true
+    end
   end
 end
