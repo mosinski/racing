@@ -4,14 +4,23 @@ require './lib/player'
 require './lib/car'
 require './lib/track'
 require './lib/roadside_trees'
+require './lib/y_screen_ruler'
 
 ##
 # Window
 ##
 
+# Match window size here and when calling YScreenRuler (for labeled Y lines in screenshots)
+WIN_W = 1024
+WIN_H = 768
+
+# Set to false to hide horizontal Y lines (debug overlay, above the road, z 3000+)
+Y_SCREEN_RULER = false
+Y_RULER_STEP   = 100 # pixels between each horizontal line
+
 set title: 'Racing',
-    width: 1024,
-    height: 768,
+    width: WIN_W,
+    height: WIN_H,
     resizable: false
 
 roadW = 2000;
@@ -19,11 +28,20 @@ segL = 200;
 
 H = 1500
 N = 1600
+# Z base so road strips sit above the background (0) and sort by depth (higher = nearer / drawn on top).
+ROAD_STRIP_Z = 100.0
+# How many road segments the draw loop extends forward; must match the `for` range size.
+VIEW_LOOKAHEAD = 300
+# z increment per one segment of distance. Screen-Y alone is wrong for hills: a far tree and a
+# nearer strip can have similar l.Y, so we key depth off segment index i (nearer = larger z).
+Z_PER_SEGMENT = 2.0
 
 car = Car.new
 track = Track.new
 player = Player.new
 roadside_trees = RoadsideTrees.new
+YScreenRuler.install!(WIN_W, WIN_H, step: Y_RULER_STEP, z: 1_800) if Y_SCREEN_RULER
+
 debug = Text.new('', x: 10, y: 10, z: 2001, color: 'red')
 gearText = Text.new('N', x: 870, y: 720, z: 2001, size: 30, font: 'assets/fonts/LCD.TTF', color: 'red')
 speedText = Text.new('0', x: 900, y: 700, z: 2001, size: 55, font: 'assets/fonts/LCD.TTF', color: 'black')
@@ -111,9 +129,10 @@ update do
   car.steering_wheel
   car.automatic_transmission
   track.drawBackground(startPos, car.speed)
+  win_w = get(:width)
 
   projected = []
-  for i in startPos..startPos + 300
+  for i in startPos..(startPos + VIEW_LOOKAHEAD)
     l = track.lines[i % N];
     l.project(car.x * roadW - x, car.y, startPos * segL - (i >= N ? N * segL : 0), car.d)
     x += dx;
@@ -123,20 +142,25 @@ update do
 
     # if (l.Y <= maxy)
      # next
-    # end
+     # end
 
+    p = track.lines[(i-1) % N]
     maxy = l.Y
-    projected << { x: l.X, y: l.Y, w: l.W, scale: l.scale, i: i }
+
+    # Nearer in the main loop = smaller (i - startPos) = larger z (drawn on top of farther strips + trees).
+    d = (i - startPos)
+    z_base = ROAD_STRIP_Z + (VIEW_LOOKAHEAD - d) * Z_PER_SEGMENT
+
+    projected << { x: l.X, y: l.Y, p_y: p.Y, w: l.W, scale: l.scale, i: i, z_base: z_base }
 
     grass  = ((i/3) % 2) > 0 ? '#10c810' : '#009a00'
     rumble = ((i/3) % 2) > 0 ? '#ffffff' : '#000000'
     road   = ((i/3) % 2) > 0 ? '#6b6b6b' : '#696969'
 
-    p = track.lines[(i-1) % N]
-
-    track.drawQuad(i % N, 0, grass, 0, p.Y, get(:width), 0, l.Y, get(:width))
-    track.drawQuad(i % N, 1, rumble, p.X, p.Y, p.W*1.2, l.X, l.Y, l.W * 1.2)
-    track.drawQuad(i % N, 2, road, p.X, p.Y, p.W, l.X, l.Y, l.W)
+    y_grass0, y_grass1 = [p.Y, l.Y].minmax
+    track.drawQuad(i % N, 0, grass, 0, y_grass0, win_w, 0, y_grass1, win_w, z: z_base + 0.0)
+    track.draw_road_strip(i % N, 1, rumble, p, l, p.W * 1.2, l.W * 1.2, z: z_base + 0.1)
+    track.draw_road_strip(i % N, 2, road, p, l, p.W, l.W, z: z_base + 0.2)
   end
 
   roadside_trees.draw(projected)
@@ -147,6 +171,9 @@ update do
   debug.text = "Speed: #{car.speed} Angle: #{car.a} Height: #{car.y} Current: #{Time.at(currentTime / 60.0).utc.strftime("%M:%S:%L")} Best: #{Time.at(bestTime / 60.0).utc.strftime("%M:%S:%L")}"
   speedText.text = car.speed.abs / 2
   gearText.text = car.model.gear
+
+  # Re-order renderables by z (cheap) instead of 900x Ruby2D#z= per frame (remove+add, very slow).
+  Ruby2D::DSL.window.instance_variable_get(:@objects).sort_by!(&:z)
 end
 
 show

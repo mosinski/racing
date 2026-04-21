@@ -3,6 +3,8 @@ require 'ruby2d'
 # Pooled billboard-style tree sprites along the road edges, drawn back-to-front
 # so near trees occlude far ones. Placement is deterministic from segment +index+
 # (stable while driving) but looks irregular like noise.
+# Z matches racing.rb ROAD_STRIP_Z so tree depth layers with the road strips.
+RACING_ROAD_STRIP_Z = 100.0
 class RoadsideTrees
   attr_reader :pool
 
@@ -10,13 +12,13 @@ class RoadsideTrees
     @pool = []
     90.times do |i|
       path = i.even? ? 'images/tree1.png' : 'images/tree2.png'
-      img = Image.new(path, x: -10_000, y: -10_000, z: 2, width: 1, height: 1, show: true)
+      img = Image.new(path, x: -10_000, y: -10_000, z: 50, width: 1, height: 1, show: true)
       @pool << img
     end
   end
 
   # +rows+ is ordered near-to-far like the road loop. Each is a snapshot
-  # { x:, y:, w:, scale:, i: } (not a Line2, which is re-used each frame).
+  # { x:, y:, p_y:, w:, scale:, i:, z_base: } — +z_base+ is the same as that segment’s road (racing).
   def draw(rows)
     @index = 0
     rows.reverse_each do |row|
@@ -43,7 +45,10 @@ class RoadsideTrees
     end
 
     @index.upto(@pool.size - 1) do |k|
-      @pool[k].x = -10_000
+      img = @pool[k]
+      img.x = -10_000
+      # Keep off-screen pool sprites in back without triggering Image#z= (remove/re-add)
+      img.instance_variable_set(:@z, -100.0)
     end
   end
 
@@ -71,9 +76,18 @@ class RoadsideTrees
     base = side == :left ? (row[:x] - w * edge) : (row[:x] + w * edge)
     cx = base + nudge
     yb = row[:y]
+    zb = row[:z_base]
+    unless zb
+      yb0 = yb
+      p_y = row[:p_y] || yb0
+      zb = RACING_ROAD_STRIP_Z + [yb0, p_y].max
+    end
+    # Same layer order as grass for this segment (zb), slightly under grass so the strip can paint over
+    # the sprite. z_base is driven by segment index in racing, not screen Y, so far trees always stay
+    # under nearer hill quads.
     img.x = cx - width / 2
     img.y = yb - height
-    img.z = yb.floor
+    img.instance_variable_set(:@z, zb - 0.25)
     @index += 1
   end
 end
