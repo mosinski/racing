@@ -1,0 +1,35 @@
+current directory: /Users/miloszosinski/Desktop/Projects/racing/vendor/bundle/ruby/3.2.0/gems/ruby2d-0.12.1/ext/ruby2d
+/Users/miloszosinski/.rvm/rubies/ruby-3.2.2/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /Users/miloszosinski/Desktop/Projects/racing/vendor/bundle/ruby/3.2.0/gems/ruby2d-0.12.1/ext/ruby2d
+make DESTDIR\= sitearchdir\=./.gem.20240711-53874-95e63g sitelibdir\=./.gem.20240711-53874-95e63g clean
+
+current directory: /Users/miloszosinski/Desktop/Projects/racing/vendor/bundle/ruby/3.2.0/gems/ruby2d-0.12.1/ext/ruby2d
+make DESTDIR\= sitearchdir\=./.gem.20240711-53874-95e63g sitelibdir\=./.gem.20240711-53874-95e63g
+compiling canvas.c
+compiling common.c
+compiling controllers.c
+compiling font.c
+compiling gl.c
+compiling gl2.c
+compiling gl3.c
+compiling gles.c
+compiling image.c
+compiling input.c
+compiling music.c
+compiling ruby2d.c
+compiling shapes.c
+compiling sound.c
+compiling text.c
+compiling window.c
+linking shared-object ruby2d/ruby2d.bundle
+ld: warning: -multiply_defined is obsolete
+ld: warning: ignoring duplicate libraries: '-lruby.3.2'
+
+current directory: /Users/miloszosinski/Desktop/Projects/racing/vendor/bundle/ruby/3.2.0/gems/ruby2d-0.12.1/ext/ruby2d
+make DESTDIR\= sitearchdir\=./.gem.20240711-53874-95e63g sitelibdir\=./.gem.20240711-53874-95e63g install
+/opt/homebrew/opt/coreutils/bin/ginstall -c -m 0755 ruby2d.bundle ./.gem.20240711-53874-95e63g/ruby2d
+
+current directory: /Users/miloszosinski/Desktop/Projects/racing/vendor/bundle/ruby/3.2.0/gems/ruby2d-0.12.1/ext/ruby2d
+make DESTDIR\= sitearchdir\=./.gem.20240711-53874-95e63g sitelibdir\=./.gem.20240711-53874-95e63g clean

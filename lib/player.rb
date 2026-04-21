@@ -9,6 +9,7 @@ class Player < Sprite
       'images/ferrari.png',
       y: 686,
       x: 432,
+      z: 2000,
       animations: animations
     )
   end
