@@ -1,62 +1,56 @@
 require './lib/line2'
+require './lib/track_layouts'
+require './lib/circuit_geometry'
 
 class Track
+  attr_reader :layout, :path2d
   attr_accessor :lines, :quads, :background
 
-  def initialize
+  def initialize(layout: :original)
+    @layout = layout
     @lines = []
     @quads = []
+    @path2d = nil
     @background = Background.new
 
-    drawLines
+    n = TrackLayouts::N
+    seg_l = 200.0
+
+    if layout == :ring
+      c = CircuitGeometry.ring_path(n, seg_l)
+      @path2d = { px: c[:px], pz: c[:pz] }
+      g = CircuitGeometry.gforce_curve_from_path(c[:px], c[:pz], n)
+      n.times { |i| @lines << make_planar_line(i, g[i], :ring) }
+    elsif layout == :stadium
+      c = CircuitGeometry.stadium_path(n, seg_l)
+      @path2d = { px: c[:px], pz: c[:pz] }
+      g = CircuitGeometry.gforce_curve_from_path(c[:px], c[:pz], n)
+      n.times { |i| @lines << make_planar_line(i, g[i], :stadium) }
+    else
+      draw_lines_from_layouts
+    end
     drawQuads
   end
 
-  def drawLines
-    for i in 0..1599
-      line = Line2.new
-      line.z = i * 200
-
-      if (i > 300 && i < 700)
-        line.curve = 0.5
-      end
-
-      if (i > 1100)
-        line.curve -= 0.7
-      end
-
-      if (i < 300 && i % 20 == 0)
-        #line.spriteX -= 2.5
-        #line.sprite = object[5]
-      end
-
-      if (i % 17 == 0)
-        #line.spriteX = 2.0
-        #line.sprite = object[6]
-      end
-
-      if (i > 300 && i % 20 == 0)
-        #line.spriteX -= 0.7
-        #line.sprite = object[4]
-      end
-
-      if (i > 800 && i % 20 == 0)
-        #line.spriteX -= 1.2
-        #line.sprite = object[1]
-      end
-
-      if (i == 400)
-        #line.spriteX -= 1.2
-        #line.sprite = object[7]
-      end
-
-      # Elevation: keep ~flat start, then smooth ramp 700–800 into hills (avoids a cliff at i==751).
-      amp = 1_200.0
-      blend = (i < 700) ? 0.0 : (i >= 800 ? 1.0 : (i - 700) / 100.0)
-      line.y = Math.sin(i / 30.0) * amp * blend
-
-      self.lines << line
+  def draw_lines_from_layouts
+    0.upto(TrackLayouts::N - 1) do |i|
+      @lines << TrackLayouts.build_line(i, @layout)
     end
+  end
+
+  def make_planar_line(i, g_curve, style)
+    line = Line2.new
+    line.z = i * 200
+    # Opposite sign from atan2 path so positive curve matches existing g-force / background feel
+    line.curve = -g_curve
+    n = TrackLayouts::N
+    case style
+    when :ring
+      line.y = 320.0 * Math.sin(2.0 * Math::PI * i / n)
+    when :stadium
+      line.y = 180.0 * Math.sin(4.0 * Math::PI * i / n) + 40.0 * Math.sin(16.0 * Math::PI * i / n)
+    end
+    line
   end
 
   def drawQuads
